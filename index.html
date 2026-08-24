@@ -178,11 +178,20 @@
             (sales || []).forEach(s => {
                 const statusStr = (s.status || '').toUpperCase();
                 
-                // Agar buyurtma allaqachon yetkazib bo'lingan bo'lsa, o'tkazib yuboramiz
+                // 1. Agar buyurtma allaqachon yetkazib bo'lingan bo'lsa - o'tkazib yuboramiz
                 if (statusStr.includes('[YETKAZILDI]')) return;
 
-                // Admin "Kuryerga berildi" yoki oshxona "Tayyor bo'ldi" qilgan bo'lsa chiqarish
-                const isReady = statusStr.includes('TAYYOR') || statusStr.includes('KURYERGA') || statusStr.includes('DOSTAVKA') || statusStr.includes('MANZIL');
+                // 2. MUHIM: Faqat DOSTAVKA / YETKAZISH / MANZIL ga tegishli buyurtmalarni saralab olamiz (Stollarni chiqarmaslik uchun)
+                const isDeliveryOrder = statusStr.includes('DOSTAVKA') || 
+                                        statusStr.includes('YETKAZISH') || 
+                                        statusStr.includes('MANZIL') || 
+                                        statusStr.includes('NAQD') || 
+                                        s.lat || s.lng;
+
+                if (!isDeliveryOrder) return; // Agar stol buyurtmasi bo'lsa tashlab yuboramiz
+
+                // 3. Tayyor yoki Kuryerga berilganligini tekshiramiz
+                const isReady = statusStr.includes('TAYYOR') || statusStr.includes('KURYERGA');
                 const isDelivering = statusStr.includes('KURYERGA BERILDI');
 
                 if (isReady) {
@@ -228,7 +237,6 @@
             const { data: current } = await db.from('sales').select('status').eq('id', orderId).single();
             if (!current) return;
 
-            // Eski statusga [KURYERGA BERILDI] qo'shamiz
             let newStatus = current.status + " [KURYERGA BERILDI]";
             const { error } = await db.from('sales').update({ status: newStatus }).eq('id', orderId);
 

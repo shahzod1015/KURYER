@@ -52,14 +52,14 @@
             border: var(--gold-border-thin);
         }
         .app-header img { 
-            width: 45px; 
-            height: 45px; 
+            width: 50px; 
+            height: 50px; 
             border-radius: 50%; 
             object-fit: cover; 
             border: 1.5px solid #d4af37; 
         }
         .app-header h2 { 
-            font-size: 18px; 
+            font-size: 17px; 
             font-weight: 800; 
             background: var(--gold-gradient);
             -webkit-background-clip: text;
@@ -152,12 +152,13 @@
 
     <div class="screen-frame">
         <div class="app-header">
-            <img src="https://wrrsvrgdinfmnuwewtoa.supabase.co/storage/v1/object/public/menu-images/Untitled%20folder/content.png" alt="CHEF Logo">
-            <h2>CHEF KURYER</h2>
+            <!-- Yangi kuryer logotipi ulandi -->
+            <img src="https://wrrsvrgdinfmnuwewtoa.supabase.co/storage/v1/object/public/menu-images/Untitled%20folder/kuryer_logo.png" alt="CHEF Kuryer Logo" id="header-logo">
+            <h2>CHEF KURYER KABINETI</h2>
         </div>
 
         <div class="section-title">
-            <span>🛵 Yetkazib berish uchun buyurtmalar</span>
+            <span>🛵 Yetkazib berish buyurtmalari</span>
             <button class="refresh-btn" onclick="kuryerBuyurtmalariniYuklash()">🔄 Yangilash</button>
         </div>
 
@@ -188,7 +189,6 @@
         }
 
         async function kuryerBuyurtmalariniYuklash() {
-            // Faqat yetkazib berish (dostavka) buyurtmalarini olib kelamiz (masalan, statusida "Dostavka" yoki "Yetkazib" so'zlari bor yoki to'lov qilingan aktiv buyurtmalar)
             const { data: sales, error } = await db.from('sales').select('*').order('created_at', { ascending: false });
             
             if (error) {
@@ -201,7 +201,6 @@
 
             (sales || []).forEach(s => {
                 const statusStr = s.status || '';
-                // Dostavka buyurtmalarini filter qilish (mijoz ilovasida dostavka uchun maxsus belgi yozilgan bo'lishi kerak, masalan "Dostavka")
                 const isDelivery = statusStr.toLowerCase().includes('dostavka') || statusStr.toLowerCase().includes('yetkazish') || statusStr.toLowerCase().includes('manzil');
                 const isDeliveredAlready = statusStr.includes('[YETKAZILDI]');
                 const isReadyForCourier = isDelivery && !isDeliveredAlready && s.is_paid !== false;
@@ -210,7 +209,6 @@
                     activeCount++;
                     const timeStr = getTashkentTimeString(s.created_at);
                     
-                    // GPS koordinatalarini ajratib olish
                     let lat = s.lat, lng = s.lng;
                     if ((!lat || !lng) && s.status) {
                         const match = s.status.match(/GPS:\s*([0-9.]+),\s*([0-9.]+)/i);
@@ -257,7 +255,6 @@
             }
         }
 
-        // Har 10 sekundda yangi buyurtmalarni avtomatik tekshirib turish
         setInterval(() => {
             kuryerBuyurtmalariniYuklash();
         }, 10000);

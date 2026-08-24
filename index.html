@@ -181,20 +181,15 @@
                 // 1. Agar buyurtma allaqachon yetkazib bo'lingan bo'lsa - o'tkazib yuboramiz
                 if (statusStr.includes('[YETKAZILDI]')) return;
 
-                // 2. MUHIM: Faqat DOSTAVKA / YETKAZISH / MANZIL ga tegishli buyurtmalarni saralab olamiz (Stollarni chiqarmaslik uchun)
-                const isDeliveryOrder = statusStr.includes('DOSTAVKA') || 
-                                        statusStr.includes('YETKAZISH') || 
-                                        statusStr.includes('MANZIL') || 
-                                        statusStr.includes('NAQD') || 
-                                        s.lat || s.lng;
+                // 2. STOL BUYURTMALARINI KURYerdan yashiramiz (Stol #1, Stol #2 va h.k.)
+                if (statusStr.includes('STOL')) return;
 
-                if (!isDeliveryOrder) return; // Agar stol buyurtmasi bo'lsa tashlab yuboramiz
-
-                // 3. Tayyor yoki Kuryerga berilganligini tekshiramiz
+                // 3. Admin yoki Oshxona tomonidan tayyorlangan yoki kuryerga berilgan barcha buyurtmalarni chiqaramiz
                 const isReady = statusStr.includes('TAYYOR') || statusStr.includes('KURYERGA');
                 const isDelivering = statusStr.includes('KURYERGA BERILDI');
 
-                if (isReady) {
+                // Agar hali status qo'yilmagan bo'lsa ham, lekin stol bo'lmasa uni ham ko'rsatishimiz mumkin (ixtiyoriy)
+                if (isReady || statusStr.includes('DOSTAVKA') || statusStr.includes('YETKAZISH')) {
                     if (isDelivering) {
                         currentActiveOrderId = s.id;
                         foundActive = true;

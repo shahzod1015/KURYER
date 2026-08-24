@@ -3,21 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CHEF Hotdog - Kuryer Kabineti</title>
+    <title>CHEF Hotdog - Kuryer Paneli</title>
 
-    <!-- Telefon ekranidagi ilova ikonkalari uchun yangi rasm -->
-    <link rel="apple-touch-icon" sizes="180x180" href="https://i.ibb.co/6JTJ9fLs/content.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="https://i.ibb.co/6JTJ9fLs/content.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://wrrsvrgdinfmnuwewtoa.supabase.co/storage/v1/object/public/menu-images/Untitled%20folder/content.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://wrrsvrgdinfmnuwewtoa.supabase.co/storage/v1/object/public/menu-images/Untitled%20folder/content.png">
     
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CHEF Courier">
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- OpenStreetMap Leaflet JS va CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
         :root {
             --gold-gradient: linear-gradient(135deg, #d4af37 0%, #fff3a8 30%, #aa771c 70%, #fcf6ba 100%);
             --gold-btn-grad: linear-gradient(180deg, #f7e089 0%, #c8962c 100%);
+            --gold-border: 1px solid rgba(212, 175, 55, 0.4);
             --gold-border-thin: 1px solid rgba(212, 175, 55, 0.25);
             --gold-text: #f5d061;
-            --card-bg: rgba(18, 18, 18, 0.9);
+            --card-bg: rgba(18, 18, 18, 0.85);
             --dark-bg: #0a0a0d;
         }
 
@@ -26,7 +34,8 @@
         body { 
             background-color: var(--dark-bg);
             background-image: 
-                radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.08) 0%, transparent 60%);
+                radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.08) 0%, transparent 60%),
+                radial-gradient(circle at 100% 100%, rgba(212, 175, 55, 0.05) 0%, transparent 50%);
             padding: 12px; 
             color: #f1f5f9; 
             min-height: 100vh;
@@ -35,11 +44,12 @@
         .screen-frame {
             border: var(--gold-border-thin);
             border-radius: 20px;
-            padding: 12px;
+            padding: 14px;
+            box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.05), 0 10px 30px rgba(0,0,0,0.8);
             background: rgba(10, 10, 13, 0.8);
+            backdrop-filter: blur(5px);
             max-width: 600px;
             margin: 0 auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
 
         .app-header { 
@@ -50,17 +60,18 @@
             background: var(--card-bg); 
             padding: 12px 16px; 
             border-radius: 16px; 
-            border: var(--gold-border-thin);
+            border: var(--gold-border);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
         }
         .app-header img { 
-            width: 50px; 
-            height: 50px; 
+            width: 46px; 
+            height: 46px; 
             border-radius: 50%; 
             object-fit: cover; 
             border: 1.5px solid #d4af37; 
         }
         .app-header h2 { 
-            font-size: 17px; 
+            font-size: 18px; 
             font-weight: 800; 
             background: var(--gold-gradient);
             -webkit-background-clip: text;
@@ -68,41 +79,45 @@
             text-transform: uppercase;
         }
 
-        .section-title {
-            color: var(--gold-text);
-            font-size: 16px;
-            margin-bottom: 10px;
-            font-weight: 700;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
         .card { 
             border: var(--gold-border-thin); 
             padding: 14px; 
-            margin-bottom: 12px; 
+            margin-bottom: 14px; 
             border-radius: 14px; 
-            background: rgba(20, 20, 25, 0.85); 
+            background: rgba(15, 15, 18, 0.9); 
             color: #f1f5f9; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
-        .badge-delivery {
-            background: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
-            border: 1px solid #ef4444;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-size: 11px;
+        .tag-price { color: var(--gold-text); font-weight: bold; }
+        
+        .btn-action {
+            width: 100%;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
             font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            transition: background 0.2s;
         }
+        .btn-action:hover { background: #2563eb; }
+
+        .btn-finish {
+            background: #10b981;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+        .btn-finish:hover { background: #059669; }
 
         .btn-yandex {
             display: block;
-            width: 100%;
             text-align: center;
-            margin-top: 10px;
+            margin-top: 8px;
             background: #ef4444;
             color: #fff;
             padding: 10px;
@@ -113,155 +128,242 @@
             box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
         }
 
-        .btn-done {
-            display: block;
+        #courier-map {
             width: 100%;
-            text-align: center;
-            margin-top: 8px;
-            background: #10b981;
-            color: #fff;
-            padding: 10px;
-            border-radius: 10px;
-            border: none;
-            font-weight: bold;
-            font-size: 13px;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+            height: 220px;
+            border-radius: 12px;
+            border: var(--gold-border-thin);
+            margin: 10px 0;
         }
 
-        .refresh-btn {
-            background: var(--gold-btn-grad);
-            color: #000;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 8px;
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
             font-weight: bold;
-            font-size: 12px;
-            cursor: pointer;
         }
-
-        .order-text {
-            font-size: 14px;
-            font-weight: 600;
-            color: #fff;
-            margin: 8px 0;
-            line-height: 1.4;
-        }
+        .status-ready { background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid #3b82f6; }
+        .status-delivering { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
     </style>
 </head>
 <body>
 
     <div class="screen-frame">
         <div class="app-header">
-            <!-- Ilova ichidagi logotip -->
-            <img src="https://wrrsvrgdinfmnuwewtoa.supabase.co/storage/v1/object/public/menu-images/Untitled%20folder/kuryer_logo.png" alt="CHEF Kuryer Logo" id="header-logo">
-            <h2>CHEF KURYER KABINETI</h2>
+            <img src="https://wrrsvrgdinfmnuwewtoa.supabase.co/storage/v1/object/public/menu-images/Untitled%20folder/content.png" alt="Logo">
+            <h2>🛵 Kuryer Paneli</h2>
         </div>
 
-        <div class="section-title">
-            <span>🛵 Yetkazib berish buyurtmalari</span>
-            <button class="refresh-btn" onclick="kuryerBuyurtmalariniYuklash()">🔄 Yangilash</button>
+        <div style="background: rgba(212, 175, 55, 0.1); border: var(--gold-border-thin); padding: 10px 14px; border-radius: 12px; margin-bottom: 14px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 13px; font-weight: bold; color: var(--gold-text);">GPS Holati:</span>
+            <span id="gps-status" style="font-size: 12px; color: #10b981; font-weight: bold;">🟢 Faol (Jonli uzatish)</span>
         </div>
 
-        <div id="courier-orders-list">Yuklanmoqda...</div>
+        <h3 style="color: var(--gold-text); margin-bottom: 10px; font-size: 16px;">📦 Tayyor va Yetkazilishi Kerak Buyurtmalar</h3>
+        <div id="courier-orders-list">Buyurtmalar yuklanmoqda...</div>
     </div>
 
     <script>
         const SUPABASE_URL = "https://wrrsvrgdinfmnuwewtoa.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndycnN2cmdkaW5mbW51d2V3dG9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzM0ODIsImV4cCI6MjEwMjU0OTQ4Mn0.YRHratsKVG42IY6YKokDycRy23oU8N3b7jO-o3tpQF4";
         const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const LOGO_URL = "https://wrrsvrgdinfmnuwewtoa.supabase.co/storage/v1/object/public/menu-images/Untitled%20folder/content.png";
 
-        function getTashkentTimeString(dateInput) {
-            if (!dateInput) return "00:00";
-            let rawStr = String(dateInput).replace(' ', 'T');
-            let d = new Date(rawStr);
-            if (isNaN(d.getTime())) return "00:00";
-            const correctedDate = new Date(d.getTime() - (5 * 60 * 60 * 1000));
-            return `${String(correctedDate.getHours()).padStart(2, '0')}:${String(correctedDate.getMinutes()).padStart(2, '0')}`;
-        }
+        let activeWatchId = null;
+        let currentActiveOrderId = null;
 
-        function parseAndFormatOrderText(rawStatus) {
-            if (!rawStatus) return '';
-            let cleaned = rawStatus.replace(/Chek:\s*https?:\/\/[^\s]+/gi, '')
-                                 .replace(/https?:\/\/[^\s]+/gi, '')
-                                 .replace(/GPS:\s*[0-9.,\s]+/gi, '');
-            cleaned = cleaned.replace(/\(x(\d+)\)/g, '<span style="color:#c084fc; font-weight:800;">(x$1)</span>');
-            return cleaned;
-        }
-
-        async function kuryerBuyurtmalariniYuklash() {
+        async function loadCourierOrders() {
             const { data: sales, error } = await db.from('sales').select('*').order('created_at', { ascending: false });
             
             if (error) {
-                document.getElementById('courier-orders-list').innerHTML = `<p style="color:#ef4444;">Xatolik yuz berdi</p>`;
+                console.error(error);
                 return;
             }
 
             let html = '';
-            let activeCount = 0;
+            let foundActive = false;
 
             (sales || []).forEach(s => {
                 const statusStr = s.status || '';
-                const isDelivery = statusStr.toLowerCase().includes('dostavka') || statusStr.toLowerCase().includes('yetkazish') || statusStr.toLowerCase().includes('manzil');
-                const isDeliveredAlready = statusStr.includes('[YETKAZILDI]');
-                const isReadyForCourier = isDelivery && !isDeliveredAlready && s.is_paid !== false;
+                const isReadyForDelivery = statusStr.includes('[TAYYOR BO\'LDI]') && !statusStr.includes('[YETKAZILDI]');
+                const isDelivering = statusStr.includes('[KURYERGA BERILDI]') && !statusStr.includes('[YETKAZILDI]');
 
-                if (isReadyForCourier) {
-                    activeCount++;
-                    const timeStr = getTashkentTimeString(s.created_at);
-                    
+                // Faqat dostavka/yetkazib berish buyurtmalarini chiqaramiz
+                const isDelivery = statusStr.toLowerCase().includes('dostavka') || 
+                                   statusStr.toLowerCase().includes('yetkazish') || 
+                                   statusStr.toLowerCase().includes('manzil') ||
+                                   statusStr.includes('NAQD');
+
+                if ((isReadyForDelivery || isDelivering) && isDelivery) {
+                    if (isDelivering) {
+                        currentActiveOrderId = s.id;
+                        foundActive = true;
+                    }
+
                     let lat = s.lat, lng = s.lng;
-                    if ((!lat || !lng) && s.status) {
-                        const match = s.status.match(/GPS:\s*([0-9.]+),\s*([0-9.]+)/i);
+                    if ((!lat || !lng) && statusStr) {
+                        const match = statusStr.match(/GPS:\s*([0-9.]+),\s*([0-9.]+)/i);
                         if (match) { lat = match[1]; lng = match[2]; }
                     }
 
-                    let yandexBtn = '';
-                    if (lat && lng) {
-                        yandexBtn = `<a class="btn-yandex" href="https://yandex.uz/maps/?rtext=~${lat},${lng}&rtt=auto" target="_blank">🗺 Yandex Navigatsiyada Ochish</a>`;
-                    } else {
-                        yandexBtn = `<p style="font-size:12px; color:#f59e0b; margin-top:8px;">⚠️ GPS manzil topilmadi</p>`;
-                    }
+                    const yandexLink = (lat && lng) ? `<a class="btn-yandex" href="https://yandex.uz/maps/?rtext=~${lat},${lng}&rtt=auto" target="_blank">🗺 Yandex Navigatsiyada ochish</a>` : '';
 
                     html += `
-                        <div class="card">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                <b>⏰ ${timeStr}</b>
-                                <span class="badge-delivery">🛵 DOSTAVKA</span>
-                            </div>
-                            <div class="order-text">${parseAndFormatOrderText(statusStr)}</div>
-                            <p style="font-size:13px; color:#d4d4d8; margin-bottom:6px;">Summa: <b style="color:var(--gold-text);">${Number(s.total_amount || 0).toLocaleString()} so'm</b></p>
-                            
-                            ${yandexBtn}
-                            
-                            <button class="btn-done" onclick="buyurtmaYetkazildi(${s.id}, '${statusStr}')">✅ Yetkazib Berildi</button>
+                    <div class="card" id="order-card-${s.id}">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <b>Buyurtma #${s.id}</b>
+                            <span class="status-badge ${isDelivering ? 'status-delivering' : 'status-ready'}">
+                                ${isDelivering ? '🛵 YETKAZILMOQDA...' : '⏱ TAYYOR (Kutilmoqda)'}
+                            </span>
                         </div>
-                    `;
+                        <p style="font-size: 14px; font-weight: bold; margin-bottom: 6px; color:#fff;">${statusStr.replace(/\[.*?\]/g, '')}</p>
+                        <p style="font-size: 13px; color: #aaa; margin-bottom: 8px;">Summa: <b class="tag-price">${Number(s.total_amount || 0).toLocaleString()} so'm</b></p>
+                        
+                        ${yandexLink}
+
+                        ${!isDelivering ? `
+                            <button class="btn-action" onclick="startDelivery(${s.id})">🚀 Qabul qilish va yetkazish</button>
+                        ` : `
+                            <div id="courier-map-${s.id}" style="width:100%; height:200px; border-radius:10px; margin:10px 0;"></div>
+                            <button class="btn-action btn-finish" onclick="finishDelivery(${s.id})">✅ Yetkazib berildi (Yakunlash)</button>
+                        `}
+                    </div>`;
                 }
             });
 
-            document.getElementById('courier-orders-list').innerHTML = html || '<p style="color:#a1a1aa; text-align:center; padding:20px 0;">Hozircha faol kuryer buyurtmalari yo\'q.</p>';
-        }
+            document.getElementById('courier-orders-list').innerHTML = html || '<p style="color:#a1a1aa; text-align:center; padding:20px;">Hozircha yetkazish uchun buyurtmalar yo\'q.</p>';
 
-        async function buyurtmaYetkazildi(id, currentStatus) {
-            if (confirm("Buyurtma muvaffaqiyatli yetkazib berildi deb belgilansinmi?")) {
-                const updatedStatus = currentStatus + " [YETKAZILDI]";
-                const { error } = await db.from('sales').update({ status: updatedStatus }).eq('id', id);
-                if (error) {
-                    alert("Xatolik: " + error.message);
-                } else {
-                    alert("✅ Buyurtma bajarildi deb belgilandi!");
-                    kuryerBuyurtmalariniYuklash();
-                }
+            // Agar yetkazilayotgan faol buyurtma bo'lsa, uning xaritasini initsializatsiya qilamiz va GPSni ishga tushiramiz
+            if (foundActive && currentActiveOrderId) {
+                initCourierLiveMap(currentActiveOrderId);
             }
         }
 
-        setInterval(() => {
-            kuryerBuyurtmalariniYuklash();
-        }, 10000);
+        async function startDelivery(orderId) {
+            // Holatni [KURYERGA BERILDI] ga o'zgartiramiz
+            const { data: current } = await db.from('sales').select('status').eq('id', orderId).single();
+            if (!current) return;
+
+            let newStatus = current.status + " [KURYERGA BERILDI]";
+            const { error } = await db.from('sales').update({ status: newStatus }).eq('id', orderId);
+
+            if (error) {
+                alert("Xatolik: " + error.message);
+            } else {
+                currentActiveOrderId = orderId;
+                alert("✅ Buyurtma qabul qilindi! Jonli GPS kuzatuvi boshlandi.");
+                loadCourierOrders();
+                startTrackingGPS(orderId);
+            }
+        }
+
+        async function finishDelivery(orderId) {
+            if (confirm("Buyurtma muvaffaqiyatli yetkazildimi?")) {
+                const { data: current } = await db.from('sales').select('status').eq('id', orderId).single();
+                if (!current) return;
+
+                let newStatus = current.status.replace('[KURYERGA BERILDI]', '') + " [YETKAZILDI]";
+                await db.from('sales').update({ status: newStatus, is_paid: true }).eq('id', orderId);
+
+                if (activeWatchId !== null) {
+                    navigator.geolocation.clearWatch(activeWatchId);
+                    activeWatchId = null;
+                }
+                currentActiveOrderId = null;
+
+                alert("🎉 Buyurtma yakunlandi!");
+                loadCourierOrders();
+            }
+        }
+
+        function startTrackingGPS(orderId) {
+            if (!navigator.geolocation) {
+                alert("Brauzeringiz GPS geolokatsiyani qo'llab-quvvatlamaydi!");
+                return;
+            }
+
+            if (activeWatchId !== null) {
+                navigator.geolocation.clearWatch(activeWatchId);
+            }
+
+            activeWatchId = navigator.geolocation.watchPosition(async (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                document.getElementById('gps-status').innerText = `🟢 GPS Faol (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+
+                // Kuryerning joriy koordinatalarini bazaga (yoki sales jadvalidagi maxsus ustunga / Realtime kanalga) yuboramiz
+                // Misol uchun, sales jadvalida courier_lat va courier_lng ustunlari bo'lsa yoki statusga yozish mumkin:
+                await db.from('sales').update({ 
+                    courier_lat: lat, 
+                    courier_lng: lng 
+                }).eq('id', orderId);
+
+            }, (error) => {
+                console.error("GPS xatosi:", error);
+                document.getElementById('gps-status').innerText = "🔴 GPS xatosi yoki o'chiq";
+            }, {
+                enableHighAccuracy: true,
+                maximumAge: 1000,
+                timeout: 5000
+            });
+        }
+
+        function initCourierLiveMap(orderId) {
+            const mapContainerId = `courier-map-${orderId}`;
+            const container = document.getElementById(mapContainerId);
+            if (!container || container.dataset.loaded) return;
+            container.dataset.loaded = "true";
+
+            // Boshlang'ich kuryer va mijoz koordinatalarini olish
+            db.from('sales').select('*').eq('id', orderId).single().then(({ data }) => {
+                if (!data) return;
+
+                let destLat = parseFloat(data.lat) || 38.8494, destLng = parseFloat(data.lng) || 65.7934;
+
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    let curLat = pos.coords.latitude;
+                    let curLng = pos.coords.longitude;
+
+                    const map = L.map(mapContainerId).setView([curLat, curLng], 15);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+
+                    // Kuryer uchun maxsus logotipli marker
+                    const courierIcon = L.icon({
+                        iconUrl: LOGO_URL,
+                        iconSize: [35, 35],
+                        iconAnchor: [17, 17],
+                        popupAnchor: [0, -15]
+                    });
+
+                    const courierMarker = L.marker([curLat, curLng], { icon: courierIcon }).addTo(map)
+                        .bindPopup("<b>Sizning joriy turgan joyingiz (Kuryer)</b>").openPopup();
+
+                    // Mijoz manzili markeri
+                    const clientMarker = L.marker([destLat, destLng]).addTo(map)
+                        .bindPopup("<b>Mijoz yetkazish manzili</b>");
+
+                    // GPS harakatini kuzatib xaritadagi kuryer markerini yangilab borish
+                    navigator.geolocation.watchPosition((p) => {
+                        let newLat = p.coords.latitude;
+                        let newLng = p.coords.longitude;
+                        courierMarker.setLatLng([newLat, newLng]);
+                        map.panTo([newLat, newLng]);
+                    }, null, { enableHighAccuracy: true });
+
+                }, () => {
+                    // Agar geolokatsiya ochiq bo'lmasa standart koordinata
+                    const map = L.map(mapContainerId).setView([38.8494, 65.7934], 14);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                });
+            });
+        }
 
         window.addEventListener('DOMContentLoaded', () => {
-            kuryerBuyurtmalariniYuklash();
+            loadCourierOrders();
+            // Har 5 sekundda buyurtmalar ro'yxatini yangilab turish
+            setInterval(loadCourierOrders, 5000);
         });
     </script>
 </body>

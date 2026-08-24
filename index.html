@@ -21,7 +21,6 @@
     <style>
         :root {
             --gold-gradient: linear-gradient(135deg, #d4af37 0%, #fff3a8 30%, #aa771c 70%, #fcf6ba 100%);
-            --gold-btn-grad: linear-gradient(180deg, #f7e089 0%, #c8962c 100%);
             --gold-border: 1px solid rgba(212, 175, 55, 0.4);
             --gold-border-thin: 1px solid rgba(212, 175, 55, 0.25);
             --gold-text: #f5d061;
@@ -128,14 +127,6 @@
             box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
         }
 
-        #courier-map {
-            width: 100%;
-            height: 220px;
-            border-radius: 12px;
-            border: var(--gold-border-thin);
-            margin: 10px 0;
-        }
-
         .status-badge {
             display: inline-block;
             padding: 4px 10px;
@@ -160,7 +151,7 @@
             <span id="gps-status" style="font-size: 12px; color: #10b981; font-weight: bold;">🟢 Faol (Jonli uzatish)</span>
         </div>
 
-        <h3 style="color: var(--gold-text); margin-bottom: 10px; font-size: 16px;">📦 Tayyor va Yetkazilishi Kerak Buyurtmalar</h3>
+        <h3 style="color: var(--gold-text); margin-bottom: 10px; font-size: 16px;">📦 Yetkazilishi Kerak Buyurtmalar</h3>
         <div id="courier-orders-list">Buyurtmalar yuklanmoqda...</div>
     </div>
 
@@ -185,28 +176,22 @@
             let foundActive = false;
 
             (sales || []).forEach(s => {
-                const statusStr = s.status || '';
-                const isReadyForDelivery = statusStr.includes('[TAYYOR BO\'LDI]') && !statusStr.includes('[YETKAZILDI]');
-                const isDelivering = statusStr.includes('[KURYERGA BERILDI]') && !statusStr.includes('[YETKAZILDI]');
+                const statusStr = (s.status || '').toUpperCase();
+                
+                // Agar buyurtma allaqachon yetkazib bo'lingan bo'lsa, o'tkazib yuboramiz
+                if (statusStr.includes('[YETKAZILDI]')) return;
 
-                // Faqat dostavka/yetkazib berish buyurtmalarini chiqaramiz
-                const isDelivery = statusStr.toLowerCase().includes('dostavka') || 
-                                   statusStr.toLowerCase().includes('yetkazish') || 
-                                   statusStr.toLowerCase().includes('manzil') ||
-                                   statusStr.includes('NAQD');
+                // Admin "Kuryerga berildi" yoki oshxona "Tayyor bo'ldi" qilgan bo'lsa chiqarish
+                const isReady = statusStr.includes('TAYYOR') || statusStr.includes('KURYERGA') || statusStr.includes('DOSTAVKA') || statusStr.includes('MANZIL');
+                const isDelivering = statusStr.includes('KURYERGA BERILDI');
 
-                if ((isReadyForDelivery || isDelivering) && isDelivery) {
+                if (isReady) {
                     if (isDelivering) {
                         currentActiveOrderId = s.id;
                         foundActive = true;
                     }
 
                     let lat = s.lat, lng = s.lng;
-                    if ((!lat || !lng) && statusStr) {
-                        const match = statusStr.match(/GPS:\s*([0-9.]+),\s*([0-9.]+)/i);
-                        if (match) { lat = match[1]; lng = match[2]; }
-                    }
-
                     const yandexLink = (lat && lng) ? `<a class="btn-yandex" href="https://yandex.uz/maps/?rtext=~${lat},${lng}&rtt=auto" target="_blank">🗺 Yandex Navigatsiyada ochish</a>` : '';
 
                     html += `
@@ -214,10 +199,10 @@
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                             <b>Buyurtma #${s.id}</b>
                             <span class="status-badge ${isDelivering ? 'status-delivering' : 'status-ready'}">
-                                ${isDelivering ? '🛵 YETKAZILMOQDA...' : '⏱ TAYYOR (Kutilmoqda)'}
+                                ${isDelivering ? '🛵 YETKAZILMOQDA...' : '⏱ TAYYOR (Qabul qilishni kutyapti)'}
                             </span>
                         </div>
-                        <p style="font-size: 14px; font-weight: bold; margin-bottom: 6px; color:#fff;">${statusStr.replace(/\[.*?\]/g, '')}</p>
+                        <p style="font-size: 14px; font-weight: bold; margin-bottom: 6px; color:#fff;">${s.status.replace(/\[.*?\]/g, '')}</p>
                         <p style="font-size: 13px; color: #aaa; margin-bottom: 8px;">Summa: <b class="tag-price">${Number(s.total_amount || 0).toLocaleString()} so'm</b></p>
                         
                         ${yandexLink}
@@ -234,17 +219,16 @@
 
             document.getElementById('courier-orders-list').innerHTML = html || '<p style="color:#a1a1aa; text-align:center; padding:20px;">Hozircha yetkazish uchun buyurtmalar yo\'q.</p>';
 
-            // Agar yetkazilayotgan faol buyurtma bo'lsa, uning xaritasini initsializatsiya qilamiz va GPSni ishga tushiramiz
             if (foundActive && currentActiveOrderId) {
                 initCourierLiveMap(currentActiveOrderId);
             }
         }
 
         async function startDelivery(orderId) {
-            // Holatni [KURYERGA BERILDI] ga o'zgartiramiz
             const { data: current } = await db.from('sales').select('status').eq('id', orderId).single();
             if (!current) return;
 
+            // Eski statusga [KURYERGA BERILDI] qo'shamiz
             let newStatus = current.status + " [KURYERGA BERILDI]";
             const { error } = await db.from('sales').update({ status: newStatus }).eq('id', orderId);
 
@@ -278,10 +262,7 @@
         }
 
         function startTrackingGPS(orderId) {
-            if (!navigator.geolocation) {
-                alert("Brauzeringiz GPS geolokatsiyani qo'llab-quvvatlamaydi!");
-                return;
-            }
+            if (!navigator.geolocation) return;
 
             if (activeWatchId !== null) {
                 navigator.geolocation.clearWatch(activeWatchId);
@@ -293,8 +274,6 @@
 
                 document.getElementById('gps-status').innerText = `🟢 GPS Faol (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
 
-                // Kuryerning joriy koordinatalarini bazaga (yoki sales jadvalidagi maxsus ustunga / Realtime kanalga) yuboramiz
-                // Misol uchun, sales jadvalida courier_lat va courier_lng ustunlari bo'lsa yoki statusga yozish mumkin:
                 await db.from('sales').update({ 
                     courier_lat: lat, 
                     courier_lng: lng 
@@ -302,7 +281,6 @@
 
             }, (error) => {
                 console.error("GPS xatosi:", error);
-                document.getElementById('gps-status').innerText = "🔴 GPS xatosi yoki o'chiq";
             }, {
                 enableHighAccuracy: true,
                 maximumAge: 1000,
@@ -316,7 +294,6 @@
             if (!container || container.dataset.loaded) return;
             container.dataset.loaded = "true";
 
-            // Boshlang'ich kuryer va mijoz koordinatalarini olish
             db.from('sales').select('*').eq('id', orderId).single().then(({ data }) => {
                 if (!data) return;
 
@@ -329,7 +306,6 @@
                     const map = L.map(mapContainerId).setView([curLat, curLng], 15);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
 
-                    // Kuryer uchun maxsus logotipli marker
                     const courierIcon = L.icon({
                         iconUrl: LOGO_URL,
                         iconSize: [35, 35],
@@ -338,22 +314,16 @@
                     });
 
                     const courierMarker = L.marker([curLat, curLng], { icon: courierIcon }).addTo(map)
-                        .bindPopup("<b>Sizning joriy turgan joyingiz (Kuryer)</b>").openPopup();
+                        .bindPopup("<b>Sizning joriy turgan joyingiz</b>").openPopup();
 
-                    // Mijoz manzili markeri
-                    const clientMarker = L.marker([destLat, destLng]).addTo(map)
-                        .bindPopup("<b>Mijoz yetkazish manzili</b>");
+                    L.marker([destLat, destLng]).addTo(map).bindPopup("<b>Mijoz manzili</b>");
 
-                    // GPS harakatini kuzatib xaritadagi kuryer markerini yangilab borish
                     navigator.geolocation.watchPosition((p) => {
-                        let newLat = p.coords.latitude;
-                        let newLng = p.coords.longitude;
-                        courierMarker.setLatLng([newLat, newLng]);
-                        map.panTo([newLat, newLng]);
+                        courierMarker.setLatLng([p.coords.latitude, p.coords.longitude]);
+                        map.panTo([p.coords.latitude, p.coords.longitude]);
                     }, null, { enableHighAccuracy: true });
 
                 }, () => {
-                    // Agar geolokatsiya ochiq bo'lmasa standart koordinata
                     const map = L.map(mapContainerId).setView([38.8494, 65.7934], 14);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
                 });
@@ -362,8 +332,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             loadCourierOrders();
-            // Har 5 sekundda buyurtmalar ro'yxatini yangilab turish
-            setInterval(loadCourierOrders, 5000);
+            setInterval(loadCourierOrders, 4000);
         });
     </script>
 </body>

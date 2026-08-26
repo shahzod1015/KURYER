@@ -196,10 +196,7 @@
             (sales || []).forEach(s => {
                 const statusStr = (s.status || '').toUpperCase();
                 
-                // 1. Yetkazib bo'lingan yoki bekor qilingan bo'lsa ko'rsatmaymiz
                 if (statusStr.includes('[YETKAZILDI]') || statusStr.includes('[BEKOR QILINGAN]')) return;
-
-                // 2. Stol buyurtmalarini yashiramiz
                 if (statusStr.includes('STOL')) return;
 
                 const isReady = statusStr.includes('TAYYOR') || statusStr.includes('KURYERGA');
@@ -214,7 +211,6 @@
                     let lat = s.lat, lng = s.lng;
                     const yandexLink = (lat && lng) ? `<a class="btn-yandex" href="https://yandex.uz/maps/?rtext=~${lat},${lng}&rtt=auto" target="_blank">🗺 Yandex Navigatsiyada ochish</a>` : '';
 
-                    // Status matnidagi "NAQD PUL" so'zini qizil rangga o'rab chiqamiz
                     let cleanStatus = s.status.replace(/\[.*?\]/g, '');
                     let formattedStatus = cleanStatus.replace(/NAQD PUL/gi, '<span class="highlight-naqd">NAQD PUL</span>');
 
